@@ -1,14 +1,16 @@
 package com.app.zxbrowser.zxbrowser;
 
+import android.app.DownloadManager;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.support.v4.widget.SwipeRefreshLayout;
+import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.DownloadListener;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -18,22 +20,20 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
+
     ProgressBar mybar;
     WebView myweb;
     ImageView myimg;
     LinearLayout myLinear;
-    SwipeRefreshLayout myLayout;
     String myCurrentUrl;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        myLayout = findViewById(R.id.myswipeLayout);
         myLinear = findViewById(R.id.myLinearLayout);
         mybar = findViewById(R.id.myProgressBar);
         myweb = findViewById(R.id.myWebView);
         myimg = findViewById(R.id.myImageView);
-
 
         mybar.setMax(100);
         myweb.loadUrl("https://www.google.com");
@@ -47,8 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                myLinear.setVisibility(View.GONE);
-                myLayout.setRefreshing(false);
+                myLinear.setVisibility(View.GONE);;
                 super.onPageFinished(view, url);
                 myCurrentUrl = url;
             }
@@ -73,13 +72,19 @@ public class MainActivity extends AppCompatActivity {
                 myimg.setImageBitmap(icon);
             }
         });
-        myLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                myweb.reload();
 
+        myweb.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+                DownloadManager.Request myRequest = new DownloadManager.Request(Uri.parse(url));
+                myRequest.allowScanningByMediaScanner();
+                myRequest.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                DownloadManager myManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                myManager.enqueue(myRequest);
+                Toast.makeText(MainActivity.this, "your file is downloading..", Toast.LENGTH_SHORT).show();
             }
         });
+
     }
 
     @Override
